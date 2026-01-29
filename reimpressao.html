@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Reimpressão</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+    <script>
+        const s = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        // Verificação de segurança simples
+        if (!s || !s.logado) window.location.href = "index.html"; 
+    </script>
+
+    <style>
+        :root {
+            --bg-body: #121212; --bg-panel: #1e1e1e; --bg-input: #2c2c2c;
+            --border: #333; --text: #fff; --text-sec: #aaa;
+            --primary: #3498db; /* Azul para diferenciar da tela de pedidos */
+            --shadow: 0 4px 15px rgba(0,0,0,0.3);
+        }
+
+        body.light-mode {
+            --bg-body: #f4f4f9; --bg-panel: #ffffff; --bg-input: #f0f0f0;
+            --border: #ddd; --text: #333; --text-sec: #666;
+            --primary: #2980b9;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: var(--bg-body); color: var(--text);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%; max-width: 600px;
+            background: var(--bg-panel);
+            padding: 40px; border-radius: 12px;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border);
+            text-align: center;
+        }
+
+        h2 { margin: 0 0 20px 0; color: var(--primary); text-transform: uppercase; }
+        
+        .search-box {
+            display: flex; gap: 10px; margin-bottom: 20px;
+        }
+        
+        input {
+            width: 100%; padding: 15px; background: var(--bg-input);
+            border: 1px solid var(--border); border-radius: 6px;
+            color: var(--text); outline: none; font-size: 16px;
+        }
+
+        button {
+            padding: 15px 30px; border: none; border-radius: 6px;
+            font-weight: bold; cursor: pointer; color: #fff;
+            text-transform: uppercase; transition: 0.2s; font-size: 14px;
+        }
+        .btn-search { background: var(--primary); flex-shrink: 0; }
+        .btn-search:hover { filter: brightness(1.1); }
+
+        .result-area {
+            margin-top: 30px; border-top: 1px solid var(--border); padding-top: 20px;
+            display: none; /* Oculto até buscar */
+        }
+
+        .info-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: var(--text-sec); border-bottom: 1px dashed #444; padding-bottom: 5px; }
+        .info-val { font-weight: bold; color: var(--text); }
+
+        .btn-print { background: #27ae60; width: 100%; margin-top: 15px; font-size: 16px; }
+        
+        .logout { position: absolute; top: 20px; right: 20px; color: var(--text-sec); cursor: pointer; font-weight: bold; }
+        .back-link { position: absolute; top: 20px; left: 20px; color: var(--text-sec); cursor: pointer; font-weight: bold; text-decoration: none; }
+
+        /* --- PDF INVISÍVEL --- */
+        #print-area { display: none; }
+        
+        /* Estilos do PDF (Mesmo padrão da outra página) */
+        .pdf-page { width: 100%; min-height: 290mm; page-break-before: always; page-break-inside: avoid; padding: 20px; box-sizing: border-box; background: #fff; color: #000; font-family: 'Arial', sans-serif; border: 1px solid transparent; }
+        .pdf-page-header { border-bottom: 2px solid #000; padding-bottom: 5px; margin-bottom: 15px; width: 100%; display: flex; justify-content: space-between; align-items: flex-end; }
+        .pdf-title-main { font-size: 18px; font-weight: 900; text-transform: uppercase; margin: 0; }
+        .pdf-subtitle { font-size: 11px; color: #000; margin-top: 2px; }
+        .pdf-prod-info-box { background: #f0f0f0; border: 1px solid #000; padding: 10px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        .model-name { font-size: 24px; font-weight: 900; }
+        .model-meta { font-size: 12px; margin-top: 2px; }
+        .model-right { text-align: right; font-size: 11px; line-height: 1.3; }
+        .tbl-mini { border-collapse: collapse; margin-bottom: 10px; border: 2px solid #000; width: 40%; }
+        .tbl-mini th { background: #000; color: #fff; padding: 3px; font-size: 11px; text-transform: uppercase; }
+        .tbl-mini td { border: 1px solid #ccc; padding: 3px; text-align: center; font-weight: bold; font-size: 12px; }
+        .tbl-aros { width: 100%; border-collapse: collapse; margin-top: 5px; border: 2px solid #000; }
+        .tbl-aros th { background: #000; color: #fff; padding: 4px; font-size: 12px; border: 1px solid #000; text-transform: uppercase; }
+        .tbl-aros td { border: 1px solid #ccc; padding: 3px; text-align: center; font-weight: bold; font-size: 13px; }
+        .col-aro { background: #e0e0e0; width: 15%; } .col-sem { width: 42.5%; } .col-com { background: #fffde7; width: 42.5%; }
+        .pdf-conference-section { margin-top: 20px; border-top: 2px solid #000; padding-top: 10px; page-break-inside: avoid; }
+        .split-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .type-box { border: 1px solid #000; padding: 8px; background: #fff; }
+        .box-header { background: #000; color: #fff; font-weight: bold; text-align: center; padding: 4px; font-size: 12px; margin: -8px -8px 8px -8px; }
+        .conf-line { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 11px; }
+        .manual-line { border-bottom: 1px solid #000; width: 70px; display: inline-block; height: 14px; }
+        .pdf-summary-page { width: 100%; min-height: 290mm; page-break-before: always; page-break-inside: avoid; background: #fff; color: #000; font-family: 'Arial', sans-serif; display: flex; flex-direction: column; align-items: center; padding: 40px; box-sizing: border-box; }
+        .summary-content { width: 100%; border: 2px solid #000; padding: 20px; box-shadow: 5px 5px 0px rgba(0,0,0,0.1); }
+        .resumo-title { text-align: center; font-size: 18px; font-weight: 900; margin-bottom: 15px; text-decoration: underline; text-transform: uppercase; }
+        .tbl-resumo { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 10px; border: 1px solid #000; }
+        .tbl-resumo th { background: #ddd; color: #000; padding: 6px; text-align: left; border: 1px solid #999; }
+        .tbl-resumo td { border: 1px solid #ccc; padding: 6px; }
+        .row-total { font-weight: 900; font-size: 14px; background: #eee; }
+    </style>
+</head>
+<body>
+
+    <a href="index.html" class="back-link">⬅ Menu</a>
+    <div class="logout" onclick="sessionStorage.clear(); window.location.href='index.html'">SAIR</div>
+
+    <div class="container">
+        <h2>Reimpressão de Pedidos</h2>
+        <p style="color:#aaa; font-size:13px; margin-bottom:20px;">Digite o número da OS ou Nome do Cliente para buscar o histórico e gerar o PDF novamente.</p>
+
+        <div class="search-box">
+            <input type="text" id="termo-busca" placeholder="Ex: 1050 ou Maria..." onkeypress="if(event.key==='Enter') buscar()">
+            <button class="btn-search" onclick="buscar()">🔍 Buscar</button>
+        </div>
+
+        <div id="resultado-preview" class="result-area">
+            <h3 style="color:#fff; margin-bottom:15px;">Pedido Encontrado</h3>
+            <div class="info-row"><span>Cliente:</span> <span class="info-val" id="prev-cli"></span></div>
+            <div class="info-row"><span>Nº O.S.:</span> <span class="info-val" id="prev-os"></span></div>
+            <div class="info-row"><span>Data Original:</span> <span class="info-val" id="prev-data"></span></div>
+            <div class="info-row"><span>Total Peças:</span> <span class="info-val" id="prev-qtd"></span></div>
+            
+            <button class="btn-print" onclick="gerarPDF()">🖨️ BAIXAR PDF</button>
+        </div>
+    </div>
+
+    <div id="print-area"><div id="pdf-content"></div></div>
+
+<script>
+    const API_URL = "https://script.google.com/macros/s/AKfycbxt3y9jXyhBNPgODA63BL_M49X_Z0nnosXETd0I6hPQ9mb3PNSTHcYZg_0t0XGpx4B1Rw/exec";
+    
+    let dadosPedidoAtual = null; // Armazena os dados para o PDF
+    let catalogo = [];
+
+    window.onload = function() {
+        if(localStorage.getItem('admin_theme') === 'light') document.body.classList.add('light-mode');
+        carregarCatalogo();
+    };
+
+    async function carregarCatalogo() {
+        try {
+            const res = await fetch(`${API_URL}?action=GET_PRODUCTS`);
+            const dados = await res.json();
+            if (dados && dados.length > 0) {
+                catalogo = dados.map(item => ({
+                    id: String(item.m), nome: item.d, pb: parseFloat(item.pb || 0), pa: parseFloat(item.pa || 0),
+                    mm: extrairMM(item.d)
+                }));
+            }
+        } catch(e) { console.log("Erro catalogo", e); }
+    }
+
+    async function buscar() {
+        const termo = document.getElementById("termo-busca").value.trim().toLowerCase();
+        if(!termo) return alert("Digite algo para buscar.");
+
+        const btn = document.querySelector(".btn-search");
+        btn.innerText = "⏳"; btn.disabled = true;
+        document.getElementById("resultado-preview").style.display = "none";
+
+        try {
+            // 1. Busca Pedidos (POST para evitar erro)
+            const res = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "GET_ORDERS" }) });
+            const lista = await res.json();
+
+            // 2. Filtra
+            const encontrados = lista.filter(p => String(p.id).toLowerCase() === termo || (p.cliente && p.cliente.toLowerCase().includes(termo)));
+
+            if(encontrados.length === 0) {
+                alert("Nenhum pedido encontrado.");
+                btn.innerText = "🔍 Buscar"; btn.disabled = false;
+                return;
+            }
+
+            // 3. Resolve Múltiplos
+            const osUnicas = [...new Set(encontrados.map(i => String(i.id)))];
+            let osAlvo = "";
+
+            if (osUnicas.length === 1) {
+                osAlvo = osUnicas[0];
+            } else {
+                let msg = "Múltiplos pedidos encontrados:\n";
+                osUnicas.forEach(os => msg += `• OS ${os}\n`);
+                msg += "\nDigite o número exato da OS:";
+                let resp = prompt(msg);
+                if(!resp) { btn.innerText = "🔍 Buscar"; btn.disabled = false; return; }
+                osAlvo = resp.trim();
+            }
+
+            // 4. Carrega Detalhes para montar o PDF
+            await prepararDadosPDF(osAlvo, lista);
+
+        } catch(e) {
+            console.error(e);
+            alert("Erro ao buscar.");
+        } finally {
+            btn.innerText = "🔍 Buscar"; btn.disabled = false;
+        }
+    }
+
+    async function prepararDadosPDF(osId, listaCompleta) {
+        // Filtra itens resumidos dessa OS
+        const itensResumo = listaCompleta.filter(p => String(p.id) === osId);
+        if(itensResumo.length === 0) return alert("OS inválida.");
+
+        // Atualiza Preview na Tela
+        document.getElementById("prev-cli").innerText = itensResumo[0].cliente;
+        document.getElementById("prev-os").innerText = itensResumo[0].id;
+        document.getElementById("prev-data").innerText = itensResumo[0].data;
+        
+        let qtdTotal = itensResumo.reduce((acc, curr) => acc + parseInt(curr.qtd), 0);
+        document.getElementById("prev-qtd").innerText = qtdTotal + " peças";
+
+        // Monta estrutura complexa para o PDF (Recupera Grades)
+        dadosPedidoAtual = {
+            cliente: itensResumo[0].cliente,
+            os: itensResumo[0].id,
+            data: itensResumo[0].data,
+            itens: []
+        };
+
+        const modelosMap = {};
+
+        for (const item of itensResumo) {
+            let nomeBase = item.modelo.replace(" - SEM PEDRA", "").replace(" - COM PEDRA", "");
+            
+            // Busca detalhes (aros) na nuvem
+            const resDet = await fetch(API_URL, { method: 'POST', body: JSON.stringify({ action: "GET_DETAILS", os: osId, modelo: item.modelo }) });
+            const detalhes = await resDet.json();
+
+            if(!modelosMap[nomeBase]) {
+                let prodCat = catalogo.find(c => c.nome === nomeBase || c.id === nomeBase) || { id: nomeBase, nome: nomeBase, pa: 0, mm: extrairMM(nomeBase) };
+                modelosMap[nomeBase] = { produto: prodCat, gradeSemFull: {}, gradeComFull: {}, gradeReal: [], arruelas: {} };
+            }
+
+            let tipo = item.modelo.includes("SEM PEDRA") ? 'sem' : 'com';
+            detalhes.forEach(d => {
+                let aro = parseInt(d.aro); let q = parseInt(d.qtd);
+                if(tipo === 'sem') modelosMap[nomeBase].gradeSemFull[aro] = (modelosMap[nomeBase].gradeSemFull[aro] || 0) + q;
+                else modelosMap[nomeBase].gradeComFull[aro] = (modelosMap[nomeBase].gradeComFull[aro] || 0) + q;
+                modelosMap[nomeBase].gradeReal.push({ aro: aro, qtd: q, tipo: tipo });
+            });
+        }
+
+        // Finaliza estrutura
+        for (const key in modelosMap) {
+            let m = modelosMap[key];
+            m.arruelas = calcularArruelas(m.produto.mm, m.gradeReal);
+            dadosPedidoAtual.itens.push(m);
+        }
+
+        // Mostra botão de imprimir
+        document.getElementById("resultado-preview").style.display = "block";
+    }
+
+    function gerarPDF() {
+        if(!dadosPedidoAtual) return;
+        
+        const container = document.getElementById("pdf-content");
+        container.innerHTML = "";
+        
+        let rowsResumo = "";
+        let grandTotalQtd = 0;
+        let grandTotalPeso = 0;
+        let totalPaginas = dadosPedidoAtual.itens.length + 1;
+
+        dadosPedidoAtual.itens.forEach((grupo, index) => {
+            let tSem=0, tCom=0, htmlRows="";
+            for(let i=10; i<=33; i++) {
+                let vS = grupo.gradeSemFull[i] || ""; let vC = grupo.gradeComFull[i] || "";
+                if(vS) tSem+=vS; if(vC) tCom+=vC;
+                htmlRows += `<tr><td class="col-aro">${i}</td><td class="col-sem">${vS}</td><td class="col-com">${vC}</td></tr>`;
+            }
+
+            let totalQtd = tSem+tCom;
+            let totalPeso = (totalQtd * grupo.produto.pa);
+            grandTotalQtd += totalQtd; grandTotalPeso += totalPeso;
+
+            rowsResumo += `<tr><td>${grupo.produto.id}</td><td>${grupo.produto.nome}</td><td style="text-align:center">${totalQtd}</td><td style="text-align:right">${totalPeso.toFixed(2)}g</td></tr>`;
+            
+            let htmlArruelas = Object.keys(grupo.arruelas).length ? Object.entries(grupo.arruelas).map(([k,v]) => `<tr><td>${k}</td><td>${v}</td></tr>`).join('') : `<tr><td colspan="2">-</td></tr>`;
+
+            container.innerHTML += `
+            <div class="pdf-page">
+                <div class="pdf-page-header">
+                    <div><div class="pdf-title-main">PEDIDO DE REPOSIÇÃO</div><div class="pdf-subtitle"><strong>OS:</strong> ${dadosPedidoAtual.os} | <strong>CLIENTE:</strong> ${dadosPedidoAtual.cliente}</div></div>
+                    <div style="text-align:right"><div class="pdf-subtitle">${dadosPedidoAtual.data}</div><div class="pdf-subtitle">Pág ${index+1}/${totalPaginas}</div></div>
+                </div>
+                <div class="pdf-prod-info-box">
+                    <div><div class="model-name">${grupo.produto.nome}</div><div class="model-meta">REF: <strong>${grupo.produto.id}</strong> | MM: <strong>${grupo.produto.mm}mm</strong></div></div>
+                    <div class="model-right"><div>Unit: <strong>${grupo.produto.pa.toFixed(2)}g</strong></div></div>
+                </div>
+                <table class="tbl-mini"><thead><tr><th>CÓD ARRUELA</th><th>QTD</th></tr></thead><tbody>${htmlArruelas}</tbody></table>
+                <table class="tbl-aros"><thead><tr><th>ARO</th><th>SEM PEDRA</th><th>COM PEDRA</th></tr></thead><tbody>${htmlRows}</tbody></table>
+                <div class="pdf-conference-section">
+                    <div class="split-grid">
+                         <div class="type-box"><div class="box-header">SEM PEDRA</div><div class="conf-line"><span>QTD SIST:</span> <strong>${tSem}</strong></div><div class="conf-line"><span>PESO EST:</span> <strong>${(tSem * grupo.produto.pa).toFixed(2)}g</strong></div><div class="conf-line" style="margin-top:10px;"><span>QTD REAL:</span> <span class="manual-line"></span></div><div class="conf-line"><span>PESO REAL:</span> <span class="manual-line"></span></div></div>
+                         <div class="type-box"><div class="box-header">COM PEDRA</div><div class="conf-line"><span>QTD SIST:</span> <strong>${tCom}</strong></div><div class="conf-line"><span>PESO EST:</span> <strong>${(tCom * grupo.produto.pa).toFixed(2)}g</strong></div><div class="conf-line" style="margin-top:10px;"><span>QTD REAL:</span> <span class="manual-line"></span></div><div class="conf-line"><span>PESO REAL:</span> <span class="manual-line"></span></div></div>
+                    </div>
+                </div>
+            </div>`;
+        });
+
+        // Resumo Final
+        container.innerHTML += `
+        <div class="pdf-summary-page">
+            <div class="summary-content">
+                <div class="resumo-title">ROMANEIO GERAL - OS ${dadosPedidoAtual.os}</div>
+                <div style="margin-bottom:15px; font-size:12px; display:flex; justify-content:space-between; border-bottom:1px solid #000; padding-bottom:5px;">
+                     <div><strong>CLIENTE:</strong> ${dadosPedidoAtual.cliente}</div><div><strong>DATA:</strong> ${dadosPedidoAtual.data}</div>
+                </div>
+                <table class="tbl-resumo">
+                    <thead><tr><th>REF</th><th>MODELO</th><th style="width:10%">QTD</th><th style="width:20%">PESO EST.</th></tr></thead>
+                    <tbody>${rowsResumo}<tr class="row-total"><td colspan="2" style="text-align:right">TOTAIS:</td><td style="text-align:center">${grandTotalQtd}</td><td style="text-align:right">${grandTotalPeso.toFixed(2)}g</td></tr></tbody>
+                </table>
+                <div style="text-align:center; font-size:10px; color:#555; margin-top:20px;">Página ${totalPaginas}/${totalPaginas}</div>
+            </div>
+        </div>`;
+
+        const el = document.getElementById('print-area'); el.style.display = 'block';
+        const opt = { margin: 10, filename: `Reimpressao_${dadosPedidoAtual.os}.pdf`, image: { type: 'jpeg', quality: 0.98 }, html2canvas: { scale: 2, useCORS: true }, jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' } };
+        html2pdf().set(opt).from(el).save().then(() => { el.style.display = 'none'; });
+    }
+
+    // Utilitários
+    function extrairMM(desc) { let match = desc.match(/(\d+[,.]?\d*)\s*MM/i); return match ? parseFloat(match[1].replace(',','.')) : 0; }
+    function calcularArruelas(mm, gradeReal) {
+        let arr = {};
+        gradeReal.forEach(i => {
+            let cat = i.aro>=10&&i.aro<=24?'P':(i.aro>=25&&i.aro<=28?'M':(i.aro>=29?'G':''));
+            if(!cat || !mm) return;
+            let c = "";
+            if(mm<=3) c = cat==='P'?'B-23':(cat==='M'?'B-29':'B-33');
+            else if(mm===4) c = cat==='P'?'C-21':(cat==='M'?'C-29':'C-33');
+            else if(mm>=5 && mm<=6) c = cat==='P'?'D-21':(cat==='M'?'D-29':'D-33');
+            else if(mm>=7 && mm<=8) c = cat==='P'?'E-23':(cat==='M'?'E-29':'E-33');
+            else if(mm>=9) c = cat==='P'?'F-23':(cat==='M'?'F-29':'F-33');
+            if(c) arr[c] = (arr[c]||0) + i.qtd;
+        });
+        return arr;
+    }
+</script>
+</body>
+</html>

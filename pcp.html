@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PCP Controle Avançado</title>
+
+    <script>
+        const s = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        if (!s || !s.logado) {
+            window.location.href = "index.html"; 
+        } 
+        else if (s.funcao !== 'fabrica' && s.funcao !== 'admin') {
+            alert("Acesso Negado: Área exclusiva da Fábrica.");
+            if(s.funcao === 'vendedor') window.location.href = "vendas.html";
+            else window.location.href = "index.html";
+        }
+    </script>
+
+    <style>
+        :root { --bg-body: #121212; --bg-panel: #1e1e1e; --bg-card: #2c2c2c; --bg-input: #2c2c2c; --border-color: #333; --text-main: #ffffff; --text-sec: #aaaaaa; --primary: #D4AF37; --scroll-track: #111; --scroll-thumb: #444; --shadow: rgba(0,0,0,0.5); }
+        body.light-mode { --bg-body: #f4f4f9; --bg-panel: #ffffff; --bg-card: #ffffff; --bg-input: #f0f0f0; --border-color: #ddd; --text-main: #333333; --text-sec: #666666; --primary: #b5952f; --scroll-track: #eee; --scroll-thumb: #ccc; --shadow: rgba(0,0,0,0.15); }
+        
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-body); color: var(--text-main); margin: 0; padding: 0; display: flex; flex-direction: column; height: 100vh; transition: background 0.3s, color 0.3s; }
+        .controls { background: var(--bg-panel); padding: 15px; border-bottom: 1px solid var(--border-color); display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        .search-box { flex: 1; min-width: 200px; }
+        input { width: 100%; padding: 12px; border-radius: 6px; border: 1px solid var(--border-color); background: var(--bg-input); color: var(--text-main); font-size: 14px; outline: none; box-sizing: border-box; }
+        input:focus { border-color: var(--primary); }
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; }
+        .filter-btn { padding: 10px 20px; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; opacity: 0.7; transition: 0.3s; font-size: 13px; text-transform: uppercase; }
+        .filter-btn:hover, .filter-btn.active { opacity: 1; transform: scale(1.05); box-shadow: 0 2px 8px var(--shadow); }
+        .btn-all { background: #7f8c8d; color: white; } .btn-pend { background: #e74c3c; color: white; } .btn-run { background: #f39c12; color: white; } .btn-done { background: #27ae60; color: white; }
+        .refresh-btn { background: var(--primary); color: #000; border: none; cursor:pointer;}
+        .theme-btn { background: transparent; border: 1px solid var(--border-color); color: var(--text-main); font-size: 18px; padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: 0.3s; }
+        .theme-btn:hover { background: var(--bg-input); }
+        
+        .board { display: flex; gap: 10px; overflow-x: auto; height: 100%; padding: 10px; }
+        .col { min-width: 280px; background: var(--bg-panel); border-radius: 8px; padding: 10px; display: flex; flex-direction: column; border: 1px solid var(--border-color); }
+        .head { font-weight: bold; text-align: center; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid var(--border-color); text-transform: uppercase; letter-spacing: 1px; color: var(--text-sec); }
+        .card { background: var(--bg-card); padding: 15px; margin-bottom: 10px; border-radius: 6px; border-left: 5px solid #555; box-shadow: 0 2px 5px var(--shadow); transition: 0.2s; position: relative; }
+        .card:hover { transform: translateY(-3px); box-shadow: 0 5px 15px var(--shadow); z-index: 10; }
+        .card h4 { margin: 0 0 5px 0; color: var(--text-main); font-size: 16px; }
+        .card-info { color: var(--text-sec); font-size: 12px; margin-bottom: 3px; }
+        .card-os { color: var(--primary); font-weight: bold; }
+        .btn-row-card { display: flex; gap: 5px; margin-top: 10px; }
+        .action-btn { flex: 1; padding: 8px; border: none; cursor: pointer; background: #444; color: #fff; font-weight: bold; border-radius: 4px; font-size: 12px; }
+        .action-btn:hover { background: var(--primary); color: #000; }
+        .detail-btn { width: 35px; padding: 8px 0; border: none; cursor: pointer; background: #3498db; color: #fff; font-weight: bold; border-radius: 4px; }
+        .detail-btn:hover { background: #2980b9; }
+        .tag-tipo { font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: bold; text-transform: uppercase; margin-left: 5px;}
+        .tag-com { background: #ffb300; color: #000; }
+        .tag-sem { background: #95a5a6; color: #fff; }
+
+        /* Botão Rápido (JÁ PRONTO) */
+        .btn-fast {
+            background: #8e44ad;
+            color: #fff;
+            margin-top: 5px;
+            width: 100%;
+            border: 1px solid #9b59b6;
+            padding: 8px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;
+        }
+        .btn-fast:hover { background: #9b59b6; }
+
+        /* MODAL */
+        #modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; justify-content: center; align-items: center; }
+        #modal-content { background: var(--bg-panel); padding: 25px; border-radius: 8px; width: 95%; max-width: 500px; border: 1px solid var(--border-color); position: relative; box-shadow: 0 10px 30px rgba(0,0,0,0.5); color: var(--text-main); }
+        #modal-close { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: var(--text-sec); }
+        #modal-close:hover { color: var(--text-main); }
+        .modal-header-grid { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; }
+        .modal-info-text { text-align: left; font-size: 14px; color: var(--text-sec); line-height: 1.6; }
+        .modal-washers-box { background: var(--bg-input); color: var(--text-main); padding: 2px; border-radius: 4px; border: 1px solid var(--border-color); min-width: 100px; }
+        .tbl-arr-modal { width: 100%; border-collapse: collapse; font-size: 10px; }
+        .tbl-arr-modal th { background: #333; color: #fff; padding: 2px 4px; text-align: center; }
+        .tbl-arr-modal td { border: 1px solid #ccc; padding: 2px 4px; text-align: center; font-weight: bold; color: var(--text-main); }
+        .grade-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .grade-table th { padding: 10px; text-align: center; font-size: 12px; border: 1px solid var(--border-color); text-transform: uppercase; }
+        .grade-table td { padding: 8px; text-align: center; border: 1px solid var(--border-color); font-size: 15px; font-weight: bold; }
+        .th-aro { background: #333; color: #fff; }
+        .th-qtd { background: var(--bg-input); color: var(--text-main); }
+        .td-qtd { color: var(--text-main); font-size: 16px; }
+
+        .logout { position: fixed; top: 15px; right: 20px; color: #aaa; cursor: pointer; font-size: 14px; z-index: 2000; }
+        .logout:hover { color: #fff; }
+
+        ::-webkit-scrollbar { height: 10px; width: 10px; }
+        ::-webkit-scrollbar-track { background: var(--scroll-track); }
+        ::-webkit-scrollbar-thumb { background: var(--scroll-thumb); border-radius: 5px; }
+        ::-webkit-scrollbar-thumb:hover { background: #666; }
+    </style>
+</head>
+<body>
+
+    <div class="logout" onclick="sessionStorage.clear(); window.location.href='index.html'">SAIR ➜</div>
+
+    <div class="controls">
+        <div class="search-box"><input type="text" id="search" placeholder="🔍 Pesquisar..." onkeyup="filtrar()"></div>
+        <div class="filters">
+            <button class="filter-btn btn-all active" onclick="setFilter('all', this)">Todos</button>
+            <button class="filter-btn btn-pend" onclick="setFilter('pendente', this)">Pendentes</button>
+            <button class="filter-btn btn-run" onclick="setFilter('execucao', this)">Em Fábrica</button>
+            <button class="filter-btn btn-done" onclick="setFilter('finalizado', this)">Finalizados</button>
+        </div>
+        <button class="theme-btn" onclick="toggleTheme()" title="Mudar Tema">🌓</button>
+        <button class="filter-btn refresh-btn" onclick="carregar()">🔄 Atualizar</button>
+    </div>
+
+    <div id="board" class="board"></div>
+
+    <div id="modal-overlay">
+        <div id="modal-content">
+            <span id="modal-close" onclick="fecharModal()">×</span>
+            <div id="modal-header-container"></div>
+            <div id="modal-body">Carregando...</div>
+        </div>
+    </div>
+
+<script>
+    // SEU LINK DO GOOGLE SCRIPT
+    const LINK_SCRIPT = "https://script.google.com/macros/s/AKfycbxG-lUBjVOD1ZtO6Lay2OD4P0YzhbJxaa1lBNmneZAO2h4qd_PKqY6Ar16edTHLOT-q_w/exec";
+
+    const ETAPAS = ["Pendente", "FUNDIÇÃO", "USINAGEM 1", "USINAGEM 2", "POLIMENTO", "CRAVAÇÃO", "LAVAGEM", "BANHO DE PRATA", "SEPARAÇÃO", "Finalizado"];
+    let todosPedidos = [];
+    let filtroAtual = 'all';
+
+    function toggleTheme() {
+        document.body.classList.toggle('light-mode');
+        localStorage.setItem('pcp_theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+    }
+    function carregarTema() { if(localStorage.getItem('pcp_theme') === 'light') document.body.classList.add('light-mode'); }
+
+    function carregar() {
+        const board = document.getElementById("board");
+        board.innerHTML = "<div style='padding:20px; color:#aaa;'>Conectando...</div>";
+        fetch(LINK_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "GET_ORDERS" }) })
+        .then(r => r.json()).then(data => { todosPedidos = data; render(); })
+        .catch(e => { board.innerHTML = `<div style='color:red; padding:20px;'>Erro de Conexão: ${e}</div>`; });
+    }
+
+    function setFilter(tipo, btn) {
+        filtroAtual = tipo;
+        document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        document.getElementById("search").value = "";
+        render();
+    }
+    function filtrar() { render(); }
+
+    function render() {
+        const board = document.getElementById("board");
+        board.innerHTML = "";
+        const termo = document.getElementById("search").value.toLowerCase();
+
+        ETAPAS.forEach(etapa => {
+            let mostrar = true;
+            if (filtroAtual === 'pendente' && etapa !== 'Pendente') mostrar = false;
+            if (filtroAtual === 'finalizado' && etapa !== 'Finalizado') mostrar = false;
+            if (filtroAtual === 'execucao' && (etapa === 'Pendente' || etapa === 'Finalizado')) mostrar = false;
+
+            if(mostrar) {
+                let col = document.createElement("div");
+                col.className = "col";
+                col.innerHTML = `<div class="head">${etapa}</div><div id="c-${etapa.replace(/\s/g,'')}"></div>`;
+                board.appendChild(col);
+            }
+        });
+
+        todosPedidos.forEach(p => {
+            let status = p.status || "Pendente";
+            if(!ETAPAS.includes(status)) status = "Pendente";
+
+            let txtOk = String(p.cliente||"").toLowerCase().includes(termo) || String(p.id||"").toLowerCase().includes(termo) || String(p.modelo||"").toLowerCase().includes(termo);
+            if(!txtOk) return;
+
+            let catOk = false;
+            if(filtroAtual === 'all') catOk = true;
+            else if(filtroAtual === 'pendente' && status === 'Pendente') catOk = true;
+            else if(filtroAtual === 'finalizado' && status === 'Finalizado') catOk = true;
+            else if(filtroAtual === 'execucao' && status !== 'Pendente' && status !== 'Finalizado') catOk = true;
+            if(!catOk) return;
+
+            let divDestino = document.getElementById(`c-${status.replace(/\s/g,'')}`);
+            if(divDestino) {
+                let idx = ETAPAS.indexOf(status);
+                let next = "";
+                let ehSemPedra = String(p.modelo).toUpperCase().includes("SEM PEDRA");
+
+                if (status === "POLIMENTO" && ehSemPedra) { next = "LAVAGEM"; } else { next = ETAPAS[idx+1]; }
+
+                let btnHtml = next ? `<button class="action-btn" onclick="move(${p.row}, '${next}')">Próx: ${next} ▶</button>` : `<div style="text-align:center; color:#2ecc71; margin-top:10px;">✔ Finalizado</div>`;
+                
+                // --- BOTÃO DE FINALIZAÇÃO RÁPIDA (Só aparece em Pendente) ---
+                let btnFastHtml = "";
+                if (status === "Pendente") {
+                    btnFastHtml = `<button class="btn-fast" onclick="moveFast(${p.row})">⚡ JÁ PRONTO (Finalizar)</button>`;
+                }
+
+                let borderStyle = "5px solid #f39c12"; 
+                if(status === 'Pendente') borderStyle = "5px solid #e74c3c";
+                if(status === 'Finalizado') borderStyle = "5px solid #2ecc71";
+                let tagHtml = ehSemPedra ? `<span class="tag-tipo tag-sem">SEM PEDRA</span>` : `<span class="tag-tipo tag-com">COM PEDRA</span>`;
+
+                let card = document.createElement("div");
+                card.className = "card";
+                card.style.borderLeft = borderStyle;
+                card.innerHTML = `
+                    <h4>${p.cliente}</h4>
+                    <div class="card-info">OS: <span class="card-os">${p.id}</span></div>
+                    <div class="card-info">${p.modelo}</div>
+                    <div class="card-info">Qtd Total: <strong>${p.qtd}</strong> ${tagHtml}</div>
+                    <div class="btn-row-card" style="flex-direction:column;">
+                        <div style="display:flex; gap:5px; width:100%;">
+                            <button class="detail-btn" onclick="verDetalhes('${p.id}', '${p.modelo}', '${p.cliente}')">👁</button>
+                            ${btnHtml}
+                        </div>
+                        ${btnFastHtml}
+                    </div>
+                `;
+                divDestino.appendChild(card);
+            }
+        });
+    }
+
+    function move(row, st) {
+        if(confirm(`Avançar para: ${st}?`)) {
+            document.body.style.cursor = "wait";
+            fetch(LINK_SCRIPT, { method:'POST', body: JSON.stringify({ action: "UPDATE_STATUS", row: row, status: st }) })
+            .then(r => r.json()).then(data => {
+                document.body.style.cursor = "default";
+                if(data.result === 'sucesso') carregar(); else alert("Erro: " + data.msg);
+            });
+        }
+    }
+
+    // NOVA FUNÇÃO: Finalização Expressa
+    function moveFast(row) {
+        if(confirm("Confirma que este produto JÁ ESTÁ PRONTO? Ele irá direto para a conferência.")) {
+            document.body.style.cursor = "wait";
+            fetch(LINK_SCRIPT, { method:'POST', body: JSON.stringify({ action: "UPDATE_STATUS", row: row, status: "Finalizado" }) })
+            .then(r => r.json()).then(data => {
+                document.body.style.cursor = "default";
+                if(data.result === 'sucesso') carregar(); else alert("Erro: " + data.msg);
+            });
+        }
+    }
+
+    function extrairMM(desc) { let match = desc.match(/(\d+[,.]?\d*)\s*MM/i); return match ? parseFloat(match[1].replace(',','.')) : 0; }
+    function getWasherCode(mm, aro) {
+        if(!mm) return null;
+        let cat = aro>=10&&aro<=24?'P':(aro>=25&&aro<=28?'M':(aro>=29?'G':''));
+        if(!cat) return null;
+        if(mm<=3) return cat==='P'?'B-23':(cat==='M'?'B-29':'B-33');
+        if(mm===4) return cat==='P'?'C-21':(cat==='M'?'C-29':'C-33');
+        if(mm>=5 && mm<=6) return cat==='P'?'D-21':(cat==='M'?'D-29':'D-33');
+        if(mm>=7 && mm<=8) return cat==='P'?'E-23':(cat==='M'?'E-29':'E-33');
+        if(mm>=9) return cat==='P'?'F-23':(cat==='M'?'F-29':'F-33');
+        return null;
+    }
+
+    function verDetalhes(os, modelo, cliente) {
+        const modal = document.getElementById("modal-overlay");
+        const header = document.getElementById("modal-header-container");
+        const body = document.getElementById("modal-body");
+        modal.style.display = "flex";
+        
+        header.innerHTML = `
+            <div class="modal-header-grid">
+                <div class="modal-info-text">
+                    <h3 style="margin:0 0 5px 0; color:var(--primary);">${cliente}</h3>
+                    OS: <b style="color:var(--text-main);">${os}</b><br>
+                    <span style="color:var(--text-sec); font-size:12px;">${modelo}</span>
+                </div>
+                <div class="modal-washers-box" id="washers-box">
+                    <div style="font-size:10px; color:var(--text-sec); text-align:center;">Calculando...</div>
+                </div>
+            </div>`;
+        body.innerHTML = "<div style='text-align:center; padding:20px;'>Buscando detalhes...</div>";
+
+        fetch(LINK_SCRIPT, { method: 'POST', body: JSON.stringify({ action: "GET_DETAILS", os: os, modelo: modelo }) })
+        .then(r => r.json()).then(data => {
+            if(data.length === 0) {
+                body.innerHTML = "<div style='text-align:center; padding:10px;'>Sem dados.</div>";
+                document.getElementById("washers-box").innerHTML = "-";
+                return;
+            }
+            let grade = {}; let arruelas = {}; let mm = extrairMM(modelo);
+            data.forEach(d => {
+                let qtd = parseInt(d.qtd) || 0; let aro = parseInt(d.aro);
+                if (!grade[aro]) grade[aro] = 0; grade[aro] += qtd; 
+                if(mm > 0) { let codigo = getWasherCode(mm, aro); if(codigo) arruelas[codigo] = (arruelas[codigo] || 0) + qtd; }
+            });
+
+            let washersHtml = "";
+            if(Object.keys(arruelas).length > 0) {
+                washersHtml = `<table class="tbl-arr-modal"><thead><tr><th>ARR</th><th>QTD</th></tr></thead><tbody>`;
+                for(let k in arruelas) washersHtml += `<tr><td>${k}</td><td>${arruelas[k]}</td></tr>`;
+                washersHtml += `</tbody></table>`;
+            } else { washersHtml = `<div style="font-size:9px; color:#aaa; text-align:center; padding:5px;">N/A</div>`; }
+            document.getElementById("washers-box").innerHTML = washersHtml;
+
+            let html = `<table class="grade-table"><thead><tr><th class="th-aro">ARO</th><th class="th-qtd">QTD</th></tr></thead><tbody>`;
+            Object.keys(grade).sort((a,b) => a - b).forEach(aro => { html += `<tr><td style="background:#222; color:#fff;">${aro}</td><td class="td-qtd">${grade[aro]}</td></tr>`; });
+            html += `</tbody></table>`;
+            let totalGeral = data.reduce((acc, curr) => acc + (parseInt(curr.qtd)||0), 0);
+            html += `<div style="text-align:right; margin-top:10px; font-size:14px; color:var(--text-sec);">Total Peças: <b style="color:var(--text-main);">${totalGeral}</b></div>`;
+            body.innerHTML = html;
+        }).catch(e => { body.innerHTML = "Erro ao carregar."; });
+    }
+
+    function fecharModal() { document.getElementById("modal-overlay").style.display = "none"; }
+    window.onload = function() { carregarTema(); carregar(); };
+</script>
+</body>
+</html>

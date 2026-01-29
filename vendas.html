@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Sistema Prime - Vendas Externas</title>
+    
+    <script>
+        const sessao = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        if (!sessao || !sessao.logado) {
+            window.location.href = "index.html"; 
+        } 
+        else if (sessao.funcao !== 'vendedor' && sessao.funcao !== 'admin') {
+            alert("Acesso Negado: Área exclusiva para Vendas.");
+            if(sessao.funcao === 'fabrica') window.location.href = "pcp.html";
+            else window.location.href = "index.html";
+        }
+    </script>
+
+    <style>
+        :root { --ouro: #D4AF37; --fundo: #09090b; --card-bg: #18181b; --texto: #f4f4f5; --texto-sec: #a1a1aa; --borda-sutil: rgba(255,255,255,0.08); --sucesso: #10b981; --container-width: 1000px; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif; margin: 0; background-color: var(--fundo); color: var(--texto); padding-bottom: 140px; min-height: 100vh; }
+        .container { max-width: var(--container-width); margin: 0 auto; padding: 20px; }
+        
+        /* ABAS PRINCIPAIS */
+        .tabs { display: flex; justify-content: center; background: rgba(24, 24, 27, 0.9); padding: 6px; border-radius: 100px; border: 1px solid var(--borda-sutil); position: sticky; top: 20px; z-index: 1000; gap: 5px; max-width: 300px; margin: 0 auto 20px auto; backdrop-filter: blur(10px); }
+        .tab-btn { flex: 1; padding: 10px; border: none; background: transparent; color: var(--texto-sec); font-weight: 600; border-radius: 100px; cursor: pointer; transition: 0.3s; }
+        .tab-btn:hover { color: #fff; }
+        .tab-btn.active { background: var(--ouro); color: #000; }
+        .view { display: none; }
+        .view.active { display: block; }
+
+        /* FILTROS */
+        .filter-section { margin-bottom: 20px; display: flex; flex-direction: column; gap: 15px; align-items: center; }
+        
+        .material-tabs { display: flex; gap: 10px; background: var(--card-bg); padding: 5px; border-radius: 12px; border: 1px solid var(--borda-sutil); }
+        .mat-btn { background: transparent; border: none; color: var(--texto-sec); padding: 8px 20px; border-radius: 8px; cursor: pointer; font-weight: 600; font-size: 13px; transition: 0.3s; }
+        .mat-btn.active { background: rgba(255,255,255,0.1); color: #fff; border: 1px solid var(--ouro); }
+
+        .grife-filter { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+        .grife-btn { background: transparent; border: 1px solid var(--borda-sutil); color: var(--texto-sec); padding: 6px 15px; border-radius: 20px; cursor: pointer; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; transition: 0.3s; }
+        .grife-btn.active { background: var(--ouro); color: #000; border-color: var(--ouro); font-weight: bold; }
+
+        /* BUSCA */
+        .search-container { display: flex; justify-content: center; margin-bottom: 30px; }
+        #busca { width: 100%; max-width: 500px; padding: 16px 20px; border-radius: 12px; background: var(--card-bg); border: 1px solid var(--borda-sutil); color: white; font-size: 15px; outline: none; }
+        #busca:focus { border-color: var(--ouro); }
+
+        /* GRID */
+        .lista-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); column-gap: 20px; row-gap: 40px; }
+        .card { background: var(--card-bg); border: 1px solid var(--borda-sutil); border-radius: 16px; padding: 15px; text-align: center; display: flex; flex-direction: column; justify-content: space-between; height: 100%; transition: 0.3s; }
+        .card:hover { transform: translateY(-5px); border-color: var(--ouro); }
+
+        /* IMAGEM */
+        .card-img-wrapper { width: 100%; height: 180px; background: #000; border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid var(--borda-sutil); display: flex; align-items: center; justify-content: center; }
+        .card-img { width: 100%; height: 100%; object-fit: cover; transition: 0.3s; }
+        .card:hover .card-img { transform: scale(1.05); }
+
+        /* DETALHES */
+        .modelo-header { display: flex; flex-direction: column; align-items: center; gap: 2px; margin-bottom: 5px; }
+        .modelo-id { color: var(--ouro); font-weight: 800; font-size: 1.2em; }
+        .info-badges { display: flex; gap: 5px; margin-top: 2px; flex-wrap: wrap; justify-content: center; }
+        .badge { font-size: 9px; padding: 2px 6px; border-radius: 4px; font-weight: 700; text-transform: uppercase; }
+        .badge-pedra { background: rgba(212, 175, 55, 0.15); color: var(--ouro); border: 1px solid rgba(212, 175, 55, 0.3); }
+        .badge-grife { background: rgba(255, 255, 255, 0.1); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+        .badge-mat { background: rgba(52, 152, 219, 0.15); color: #3498db; border: 1px solid rgba(52, 152, 219, 0.3); } 
+        
+        .modelo-desc { font-size: 11px; color: var(--texto-sec); margin-bottom: 15px; min-height: 30px; line-height: 1.4; text-align: center; }
+
+        /* BOTÕES PRODUTO */
+        .btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: auto; }
+        .btn { border: none; padding: 10px; border-radius: 8px; font-weight: 600; cursor: pointer; width: 100%; font-size: 11px; text-transform: uppercase; transition: 0.2s; }
+        .btn:hover { filter: brightness(1.1); }
+        .btn-add { background: var(--ouro); color: #000; }
+        .btn-stone { background: rgba(255,255,255,0.05); color: #FFF; border: 1px solid var(--borda-sutil); }
+        .btn-stone:hover { background: rgba(255,255,255,0.1); }
+
+        /* CHECKOUT */
+        .id-group { background: var(--card-bg); padding: 30px; border-radius: 20px; margin-bottom: 30px; border: 1px solid var(--borda-sutil); display: grid; gap: 20px; }
+        .id-group label { display: block; font-size: 11px; color: var(--ouro); font-weight: 700; margin-bottom: 8px; text-transform: uppercase; }
+        .id-group input { width: 100%; padding: 14px; border-radius: 8px; border: 1px solid var(--borda-sutil); background: rgba(0,0,0,0.3); color: #fff; box-sizing: border-box; }
+        .orcamento-item { background: var(--card-bg); border-radius: 12px; padding: 20px; margin-bottom: 15px; border: 1px solid var(--borda-sutil); }
+        .orcamento-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid var(--borda-sutil); }
+        .tamanho-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(45px, 1fr)); gap: 6px; }
+        .tamanho-box { background: rgba(0,0,0,0.3); padding: 5px 0; border-radius: 6px; text-align: center; border: 1px solid var(--borda-sutil); }
+        .tamanho-box span { display: block; font-size: 9px; color: var(--texto-sec); margin-bottom: 2px; }
+        .tamanho-box input { width: 100%; background: none; border: none; color: #fff; text-align: center; font-size: 16px; font-weight: 700; padding: 0; outline: none; }
+        .total-wrapper { background: var(--ouro); color: #000; padding: 25px; border-radius: 16px; text-align: center; margin-top: 40px; }
+        .total-floating { font-weight: 900; font-size: 2em; margin: 0; }
+        
+        .logout { position: fixed; top: 15px; right: 20px; color: #aaa; cursor: pointer; font-size: 14px; z-index: 2000; }
+        .logout:hover { color: #fff; }
+    </style>
+</head>
+<body>
+
+    <div class="logout" onclick="sessionStorage.clear(); window.location.href='index.html'">SAIR ➜</div>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" onclick="switchTab('catalogo', this)">Catálogo</button>
+            <button class="tab-btn" onclick="switchTab('orcamento', this)">Orçamento (<span id="cart-counter">0</span>)</button>
+        </div>
+
+        <div id="catalogo" class="view active">
+            
+            <div class="filter-section">
+                <div class="material-tabs">
+                    <button class="mat-btn" onclick="setMaterial('todos', this)">Todos</button>
+                    <button class="mat-btn active" onclick="setMaterial('PRATA', this)">Prata</button>
+                    <button class="mat-btn" onclick="setMaterial('MOEDA', this)">Moeda</button>
+                </div>
+
+                <div class="grife-filter">
+                    <button class="grife-btn" onclick="setGrife('todos', this)">Todas as Grifes</button>
+                    <button class="grife-btn active" onclick="setGrife('PRIME', this)">Prime</button>
+                    <button class="grife-btn" onclick="setGrife('TREVISAN', this)">Trevisan</button>
+                </div>
+            </div>
+
+            <div class="search-container">
+                <input type="text" id="busca" placeholder="🔎 Pesquisar..." oninput="filtrar()">
+            </div>
+            <div id="lista" class="lista-grid">
+                <div style="text-align:center; color:#aaa; width:100%;">Carregando produtos da nuvem...</div>
+            </div>
+        </div>
+
+        <div id="orcamento" class="view">
+            <div class="id-group">
+                <div class="input-wrapper"><label>Vendedor</label><input type="text" id="vendedor" readonly></div>
+                <div class="input-wrapper"><label>Cliente</label><input type="text" id="cliente" placeholder="Nome do cliente..."></div>
+            </div>
+            <div id="itens-checkout"></div>
+            <div class="total-wrapper"><div class="total-floating">Total: R$ <span id="total-geral">0,00</span></div></div>
+            <button id="btn-finalizar" class="btn" style="background:var(--sucesso); color:#fff; padding:20px; font-size:16px; margin-top:30px;" onclick="enviarPedido()">Enviar Pedido (Fábrica)</button>
+        </div>
+    </div>
+
+    <script>
+        const PCP_API_URL = "https://script.google.com/macros/s/AKfycbxG-lUBjVOD1ZtO6Lay2OD4P0YzhbJxaa1lBNmneZAO2h4qd_PKqY6Ar16edTHLOT-q_w/exec";
+        document.getElementById('vendedor').value = sessao.usuario;
+
+        let produtos = []; 
+        let cart = [];
+        
+        // --- ESTADOS INICIAIS (PADRÃO: PRATA E PRIME) ---
+        let filtroMaterial = 'PRATA';
+        let filtroGrife = 'PRIME';
+
+        // CARREGAR DADOS DA PLANILHA
+        window.onload = async function() {
+            try {
+                const res = await fetch(`${PCP_API_URL}?action=GET_PRODUCTS`);
+                const data = await res.json();
+                if(data && data.length > 0) {
+                    produtos = data;
+                    filtrar(); // JÁ APLICA OS FILTROS AO INICIAR
+                } else {
+                    document.getElementById('lista').innerHTML = '<div style="color:red; text-align:center;">Erro: Planilha vazia ou sem produtos.</div>';
+                }
+            } catch(err) {
+                console.error(err);
+                document.getElementById('lista').innerHTML = '<div style="color:red; text-align:center;">Erro ao conectar com a planilha.</div>';
+            }
+        };
+
+        function switchTab(t, btn) {
+            document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(t).classList.add('active');
+            btn.classList.add('active');
+            if(t === 'orcamento') renderCheckout();
+        }
+
+        // --- LÓGICA DE FILTROS ---
+        function setMaterial(mat, btn) {
+            filtroMaterial = mat;
+            document.querySelectorAll('.mat-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filtrar();
+        }
+
+        function setGrife(grife, btn) {
+            filtroGrife = grife;
+            document.querySelectorAll('.grife-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            filtrar();
+        }
+
+        function filtrar() {
+            const termo = document.getElementById('busca').value.toUpperCase();
+            
+            const filtrados = produtos.filter(p => {
+                // 1. Filtro Texto
+                const matchTexto = p.m.includes(termo) || p.d.toUpperCase().includes(termo);
+                
+                // 2. Filtro Material (PRATA por padrão)
+                let matchMat = true;
+                if (filtroMaterial !== 'todos') {
+                    matchMat = p.mat && p.mat.toUpperCase().includes(filtroMaterial);
+                }
+
+                // 3. Filtro Grife (PRIME por padrão)
+                let matchGrife = true;
+                if (filtroGrife !== 'todos') {
+                    matchGrife = p.grife && p.grife.toUpperCase() === filtroGrife;
+                }
+
+                return matchTexto && matchMat && matchGrife;
+            });
+
+            renderCatalogo(filtrados);
+        }
+
+        function renderCatalogo(itens) {
+            const lista = document.getElementById('lista'); lista.innerHTML = '';
+            const semFoto = "https://placehold.co/300x300/18181b/FFF?text=Sem+Foto";
+
+            if(itens.length === 0) {
+                lista.innerHTML = '<div style="text-align:center; color:#aaa; grid-column:1/-1; padding:20px;">Nenhum produto encontrado nesta categoria.</div>';
+                return;
+            }
+
+            itens.forEach(i => {
+                const hasStone = i.pedras > 0;
+                const priceSem = (i.p || 0).toFixed(2);
+                const priceCom = (i.cp || 0).toFixed(2);
+                const showStoneBtn = (i.cp > 0);
+                const imgSrc = `imagens/${i.m}.jpg`;
+
+                lista.innerHTML += `
+                <div class="card">
+                    <div>
+                        <div class="card-img-wrapper">
+                            <img src="${imgSrc}" class="card-img" onerror="this.src='${semFoto}'">
+                        </div>
+                        <div class="modelo-header">
+                            <span class="modelo-id">${i.m}</span>
+                            <div class="info-badges">
+                                ${i.grife ? `<span class="badge badge-grife">${i.grife}</span>` : ''}
+                                ${i.mat ? `<span class="badge badge-mat">${i.mat}</span>` : ''}
+                                ${hasStone ? `<span class="badge badge-pedra">💎 ${i.q_pedra}</span>` : ''}
+                            </div>
+                        </div>
+                        <div class="modelo-desc">${i.d}</div>
+                    </div>
+                    <div class="btn-group">
+                        <button class="btn btn-add" onclick="addToCart('${i.m}', false)">Sem Pedra R$${priceSem}</button>
+                        ${showStoneBtn ? `<button class="btn btn-stone" onclick="addToCart('${i.m}', true)">Com Pedra R$${priceCom}</button>` : ''}
+                    </div>
+                </div>`;
+            });
+        }
+
+        function addToCart(m, stone) {
+            const p = produtos.find(x => x.m === m);
+            const id = m + (stone ? '-CP' : '-SP');
+            if(cart.find(c => c.id === id)) return;
+            
+            const price = stone ? (p.cp || 0) : (p.p || 0);
+            
+            cart.push({
+                ...p, 
+                id, 
+                hasStone: stone, 
+                price: price, 
+                sizes: {},
+                grife: p.grife,
+                material: p.mat,
+                pesoBruto: p.pb,
+                pesoAcabado: p.pa
+            });
+            document.getElementById('cart-counter').innerText = cart.length;
+            
+            const btn = event.target;
+            const original = btn.innerText;
+            btn.innerText = "✅ ADICIONADO"; btn.style.background = "#10b981";
+            setTimeout(() => { btn.innerText = original; btn.style.background = ""; }, 1000);
+        }
+
+        function renderCheckout() {
+            const container = document.getElementById('itens-checkout'); container.innerHTML = '';
+            let total = 0;
+            
+            cart.forEach((item, idx) => {
+                const q = Object.values(item.sizes).reduce((a, b) => a + (parseInt(b) || 0), 0);
+                const sub = item.price * q; total += sub;
+                
+                let grid = ''; 
+                for(let s=10; s<=33; s++) {
+                    let style = item.sizes[s] > 0 ? "border-color:var(--ouro); background:rgba(212,175,55,0.1);" : "";
+                    grid += `<div class="tamanho-box" style="${style}"><span>${s}</span><input type="number" value="${item.sizes[s] || ''}" oninput="updateSize(${idx}, ${s}, this.value)"></div>`;
+                }
+
+                container.innerHTML += `<div class="orcamento-item" id="row-${idx}">
+                    <div class="orcamento-header">
+                        <div class="item-info" style="display:flex; align-items:center; gap:10px;">
+                            <img src="imagens/${item.m}.jpg" style="width:40px; height:40px; border-radius:4px; object-fit:cover;" onerror="this.style.display='none'">
+                            <div>
+                                <div style="font-weight:bold;">${item.m} ${item.hasStone?'(C/P)':'(S/P)'}</div>
+                                <div style="font-size:10px; color:#aaa;">${item.grife || ''} - ${item.material || ''}</div>
+                            </div>
+                        </div>
+                        <div class="item-subtotal">R$ ${sub.toFixed(2)}</div>
+                    </div>
+                    <div class="tamanho-grid">${grid}</div>
+                    <div style="text-align:right; margin-top:10px;"><span onclick="remove(${idx})" style="color:#ef4444; font-size:11px; cursor:pointer;">✕ Remover</span></div>
+                </div>`;
+            });
+            document.getElementById('total-geral').innerText = total.toFixed(2).replace('.',',');
+        }
+
+        function updateSize(idx, s, v) { cart[idx].sizes[s] = v; renderCheckout(); }
+        function remove(idx) { cart.splice(idx,1); document.getElementById('cart-counter').innerText=cart.length; renderCheckout(); }
+        
+        async function enviarPedido() {
+            const v = document.getElementById('vendedor').value.toUpperCase();
+            const c = document.getElementById('cliente').value.toUpperCase();
+            if(!c) return alert("⚠️ Preencha o Cliente!");
+            if(cart.length === 0) return alert("Carrinho vazio!");
+
+            const btn = document.getElementById('btn-finalizar'); 
+            btn.disabled = true; btn.innerText = "⏳ ENVIANDO...";
+
+            const payload = { action: "ENVIAR_PARA_ANALISE", vendedor: v, cliente: c, itens: cart };
+
+            try {
+                await fetch(PCP_API_URL, { method: 'POST', mode: 'no-cors', body: JSON.stringify(payload) });
+                alert(`✅ Pedido enviado para a Fábrica com Sucesso!`);
+                cart = []; renderCheckout(); 
+                document.getElementById('cart-counter').innerText = 0; 
+                document.getElementById('cliente').value = "";
+            } catch(e) { alert("Erro ao enviar."); }
+            btn.disabled = false; btn.innerText = "Enviar Pedido (Fábrica)";
+        }
+    </script>
+</body>
+</html>

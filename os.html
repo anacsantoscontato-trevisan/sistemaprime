@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema O.S. - Logística</title>
+
+    <script>
+        const s = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+        
+        // 🔒 VERIFICAÇÃO DE ACESSO
+        if (!s || !s.logado) { window.location.href = "index.html"; } 
+        else if (s.funcao !== 'loja' && s.funcao !== 'admin') {
+            alert("Acesso Negado: Área restrita para Lojas e Admin.");
+            if(s.funcao === 'fabrica') window.location.href = "pcp.html";
+            else if(s.funcao === 'vendedor') window.location.href = "vendas.html";
+            else window.location.href = "index.html";
+        }
+    </script>
+
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background-color: #e9ecef; padding: 20px; }
+        .container { max-width: 900px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+        .logout { position: fixed; top: 15px; right: 20px; color: #555; cursor: pointer; font-size: 14px; font-weight: bold; z-index: 2000; background: #ddd; padding: 5px 10px; border-radius: 4px; }
+        
+        /* ABAS */
+        .tabs { display: flex; border-bottom: 2px solid #ddd; margin-bottom: 20px; }
+        .tab-btn { flex: 1; padding: 15px; border: none; background: none; font-size: 16px; font-weight: bold; color: #666; cursor: pointer; transition: 0.3s; display: none; }
+        .tab-btn:hover { background: #f8f9fa; }
+        .tab-btn.active { color: #007bff; border-bottom: 3px solid #007bff; background-color: #f0f8ff; }
+        
+        .content-section { display: none; animation: fadeIn 0.3s; }
+        .content-section.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+        /* FORMULÁRIOS */
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: 600; color: #495057; }
+        input, select { width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 5px; font-size: 16px; box-sizing: border-box; }
+        input:focus { border-color: #007bff; outline: none; }
+        
+        /* BOTÕES */
+        .btn-add { background: #6c757d; color: white; border: none; padding: 12px; width: 100%; font-size: 16px; border-radius: 5px; margin-top: 10px; cursor: pointer; }
+        .btn-search { background: #17a2b8; color: white; border: none; padding: 12px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-send-google { background: #007bff; color: white; border: none; padding: 20px; width: 100%; font-size: 20px; border-radius: 8px; margin-top: 25px; font-weight: bold; display: none; cursor: pointer; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 13px; }
+        th, td { border: 1px solid #dee2e6; padding: 8px; text-align: center; }
+        th { background: #343a40; color: white; }
+        
+        .status-pendente { color: #d35400; font-weight: bold; }
+        .status-ok { color: #27ae60; font-weight: bold; }
+        .id-code { font-family: monospace; color: #666; font-size: 11px; background: #eee; padding: 2px 4px; border-radius: 3px; }
+        
+        .btn-clear { background: #dc3545; color: white; border: none; padding: 5px 10px; font-size: 12px; border-radius: 4px; float: right; cursor: pointer; }
+        .btn-delete-item { background: #dc3545; color: white; border: none; border-radius: 4px; padding: 4px 8px; cursor: pointer; }
+        
+        /* CARDS */
+        .card-resultado { background: #fff; border-left: 6px solid #333; padding: 15px; margin-bottom: 12px; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); transition: 0.3s; }
+        .card-entrada { border-color: #e67e22; }
+        .card-saida { border-color: #27ae60; }
+        
+        /* ESTILO QUANDO CONFERIDO (CHECKED) */
+        .card-checked { background-color: #d4edda; border-left-color: #28a745 !important; opacity: 0.8; }
+        
+        .card-titulo { font-weight: bold; font-size: 1.1em; display: flex; justify-content: space-between; margin-bottom: 8px; align-items: center; }
+
+        .conf-header { display: flex; gap: 10px; align-items: center; background: #f8f9fa; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        .conf-btn { background: #28a745; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+        /* CHECKBOX ESTILIZADO */
+        .check-wrapper { display: flex; align-items: center; gap: 5px; background: #eee; padding: 5px 10px; border-radius: 20px; cursor: pointer; border: 1px solid #ccc; }
+        .check-wrapper:hover { background: #ddd; }
+        .check-wrapper input { width: auto; margin: 0; cursor: pointer; }
+        .check-label { font-size: 12px; font-weight: bold; color: #333; cursor: pointer; }
+    </style>
+</head>
+<body>
+
+<div class="logout" onclick="sessionStorage.clear(); window.location.href='index.html'">SAIR ➜</div>
+
+<div class="container">
+    
+    <div class="tabs">
+        <button class="tab-btn" id="btn-tab-lanc" onclick="abrirAba('lancamento', this)">📝 Lançamento</button>
+        <button class="tab-btn" id="btn-tab-conf" onclick="abrirAba('conferencia', this)">📋 Conferência Loja</button>
+        <button class="tab-btn" id="btn-tab-pesq" onclick="abrirAba('pesquisa', this)" style="display:block;">🔍 Rastrear O.S.</button>
+    </div>
+
+    <div id="lancamento" class="content-section">
+        <div style="overflow: hidden; margin-bottom: 10px;">
+            <button class="btn-clear" onclick="limparTudo()">Limpar Campos</button>
+        </div>
+        <div class="form-group">
+            <label>Ação:</label>
+            <select id="tipoAcao" onchange="mudarVisual()">
+                <option value="ENTRADA">📥 ENTRADA (Recebimento)</option>
+                <option value="SAIDA">📤 SAÍDA (Entrega)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Loja:</label>
+            <select id="loja">
+                <option value="Várzea Paulista">1 - Várzea Paulista</option>
+                <option value="Franco da Rocha">2 - Franco da Rocha</option>
+                <option value="Campo Limpo Paulista">3 - Campo Limpo Paulista</option>
+                <option value="Cajamar">4 - Cajamar</option>
+                <option value="Jarinu">5 - Jarinu</option>
+                <option value="Francisco Morato">6 - Francisco Morato</option>
+                <option value="Itaquera">7 - Itaquera</option>
+            </select>
+        </div>
+        <div class="form-group"><label>Data:</label><input type="date" id="dataMovimento"></div>
+        <div class="form-group"><label>Responsável:</label><input type="text" id="responsavel" placeholder="Quem trouxe ou retirou?"></div>
+        <div class="form-group">
+            <label id="labelOS" style="color: #d35400;">Nº O.S. (Bipe e Enter):</label>
+            <input type="text" id="pedido" placeholder="Digite a O.S." onkeypress="handleEnter(event)">
+        </div>
+        <button class="btn-add" onclick="adicionarFila()">⬇️ Adicionar à Fila</button>
+        <h3 style="margin-top: 25px; border-bottom: 1px solid #eee;">Fila de Envio</h3>
+        <table id="tabelaPedidos">
+            <thead><tr><th style="width:40px;">Excluir</th><th>Status</th><th>ID</th><th>Ação</th><th>O.S.</th><th>Resp.</th></tr></thead>
+            <tbody></tbody>
+        </table>
+        <button id="btnEnviarGoogle" class="btn-send-google" onclick="enviarTudoParaGoogle()">☁️ ENVIAR <span id="contador">0</span> ITENS</button>
+    </div>
+
+    <div id="conferencia" class="content-section">
+        <div class="conf-header">
+            <div style="flex:1">
+                <label>Selecione a Loja:</label>
+                <select id="lojaConf">
+                    <option value="Várzea Paulista">1 - Várzea Paulista</option>
+                    <option value="Franco da Rocha">2 - Franco da Rocha</option>
+                    <option value="Campo Limpo Paulista">3 - Campo Limpo Paulista</option>
+                    <option value="Cajamar">4 - Cajamar</option>
+                    <option value="Jarinu">5 - Jarinu</option>
+                    <option value="Francisco Morato">6 - Francisco Morato</option>
+                    <option value="Itaquera">7 - Itaquera</option>
+                </select>
+            </div>
+            <button class="conf-btn" onclick="carregarConferencia()">🔄 Atualizar Lista</button>
+        </div>
+        <div id="resultadoConferencia">
+            <p style="text-align:center; color:#666;">Selecione a loja e clique em Atualizar.</p>
+        </div>
+    </div>
+
+    <div id="pesquisa" class="content-section">
+        <h3>Rastreamento de Peças</h3>
+        <div class="form-group">
+            <label>O.S.:</label>
+            <input type="text" id="campoBusca" placeholder="Ex: 1040" style="font-size: 20px;" onkeypress="if(event.key === 'Enter') realizarBusca()">
+        </div>
+        <button class="btn-search" onclick="realizarBusca()">🔎 Buscar Histórico</button>
+        <div id="statusBusca" style="text-align: center; margin-top: 15px; font-weight: bold;"></div>
+        <div id="resultadoPesquisa"></div>
+    </div>
+
+</div>
+
+<script>
+    const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz8ZMZLSloP6GLQ6dBGeW9KFHRSzes8VL6eCYTv_iDK7Dgwgl_yJel-a8r45J_M1v0S/exec"; 
+    
+    let filaDeEnvio = [];
+    document.getElementById('dataMovimento').valueAsDate = new Date();
+    mudarVisual();
+
+    // --- CONTROLE DE ACESSO ---
+    window.onload = function() {
+        const btnLanc = document.getElementById("btn-tab-lanc");
+        const btnConf = document.getElementById("btn-tab-conf");
+        const btnPesq = document.getElementById("btn-tab-pesq");
+
+        if (s.funcao === 'admin') {
+            btnLanc.style.display = "block";
+            abrirAba('lancamento', btnLanc);
+        } 
+        else if (s.funcao === 'loja') {
+            btnConf.style.display = "block";
+            abrirAba('conferencia', btnConf);
+        }
+        else {
+            abrirAba('pesquisa', btnPesq);
+        }
+    };
+
+    function gerarIdUnico() { return 'SYS-' + Math.random().toString(36).substr(2, 6).toUpperCase(); }
+
+    function abrirAba(nomeAba, elementoBtn) {
+        document.querySelectorAll('.content-section').forEach(div => div.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        document.getElementById(nomeAba).classList.add('active');
+        if(elementoBtn) elementoBtn.classList.add('active');
+    }
+
+    // --- CONFERÊNCIA COM CHECKBOX ---
+    function carregarConferencia() {
+        const loja = document.getElementById("lojaConf").value;
+        const div = document.getElementById("resultadoConferencia");
+        div.innerHTML = "<p style='text-align:center'>⏳ Carregando histórico...</p>";
+
+        fetch(`${SCRIPT_URL}?action=GET_STORE_HISTORY&loja=${encodeURIComponent(loja)}`)
+        .then(r => r.json())
+        .then(data => {
+            if(!data || data.length === 0) {
+                div.innerHTML = "<p style='text-align:center; color:#888;'>Nenhum registro recente encontrado para esta loja.</p>";
+                return;
+            }
+            let html = "";
+            data.forEach(item => {
+                let dataFmt = item.data.length >= 10 ? item.data.substring(0, 10) : item.data;
+                let classe = item.acao === "ENTRADA" ? "card-entrada" : "card-saida";
+                let icone = item.acao === "ENTRADA" ? "📥 ENTRADA" : "📤 SAÍDA";
+                
+                // ADICIONADO CHECKBOX AQUI
+                html += `
+                <div class="card-resultado ${classe}" id="card-${item.id}">
+                    <div class="card-titulo">
+                        <span>${icone} | ${dataFmt}</span>
+                        <label class="check-wrapper">
+                            <input type="checkbox" onchange="toggleCheck(this)">
+                            <span class="check-label">CONFERIDO</span>
+                        </label>
+                    </div>
+                    <div style="font-size:18px; margin:5px 0;">O.S.: <strong>${item.os}</strong></div>
+                    <div style="color:#555; font-size:12px;">Responsável: ${item.resp}</div>
+                </div>`;
+            });
+            div.innerHTML = html;
+        })
+        .catch(e => div.innerHTML = "<p style='color:red; text-align:center'>Erro ao carregar.</p>");
+    }
+
+    // --- FUNÇÃO VISUAL DE CHECK ---
+    function toggleCheck(checkbox) {
+        // Acha o card pai do checkbox
+        const card = checkbox.closest('.card-resultado');
+        if (checkbox.checked) {
+            card.classList.add('card-checked'); // Fica verde
+        } else {
+            card.classList.remove('card-checked'); // Volta ao normal
+        }
+    }
+
+    // --- ENVIO ---
+    async function enviarTudoParaGoogle() {
+        var btn = document.getElementById("btnEnviarGoogle");
+        var textoOriginal = btn.innerHTML;
+        btn.disabled = true; btn.innerText = "⏳ ENVIANDO...";
+
+        for (let item of filaDeEnvio) {
+            if (item.status === "pendente") {
+                try {
+                    await fetch(SCRIPT_URL, { method: 'POST', mode: 'no-cors', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(item) });
+                    item.status = "enviado";
+                    renderizarTabela(); 
+                } catch (e) { console.error("Erro:", e); }
+            }
+        }
+        btn.disabled = false; btn.innerHTML = textoOriginal;
+        atualizarBotao();
+        
+        var aindaPendente = filaDeEnvio.filter(i => i.status === "pendente").length;
+        if(aindaPendente === 0) {
+            alert("✅ Lançamentos finalizados com sucesso!");
+            limparTudo();
+        } else {
+            alert("⚠️ Atenção: Alguns itens falharam. Tente novamente.");
+        }
+    }
+
+    // --- OUTROS ---
+    function realizarBusca() {
+        var os = document.getElementById("campoBusca").value.trim();
+        var div = document.getElementById("resultadoPesquisa");
+        var status = document.getElementById("statusBusca");
+        if(!os) { alert("Digite a O.S."); return; }
+        status.innerText = "⏳ Buscando..."; div.innerHTML = "";
+
+        fetch(SCRIPT_URL + "?q=" + encodeURIComponent(os))
+        .then(r => r.json())
+        .then(data => {
+            status.innerText = "";
+            if (!data || data.length === 0) { div.innerHTML = "<p style='text-align:center; color:red'>Nenhum registro encontrado.</p>"; return; }
+            let html = "";
+            data.forEach(item => {
+                let dataFmt = item.data.length >= 10 ? item.data.substring(0, 10) : item.data;
+                let classe = item.acao === "ENTRADA" ? "card-entrada" : "card-saida";
+                html += `<div class="card-resultado ${classe}"><div class="card-titulo"><span>${item.acao}</span><span>${dataFmt}</span></div><div><strong>O.S.: ${item.os}</strong></div><div>Loja: ${item.loja}<br>Resp: ${item.resp}</div></div>`;
+            });
+            div.innerHTML = html;
+        })
+        .catch(e => { status.innerText = "Erro ao buscar."; });
+    }
+
+    function handleEnter(e) { if(e.key === 'Enter') adicionarFila(); }
+    function mudarVisual() {
+        var acao = document.getElementById("tipoAcao").value;
+        var input = document.getElementById("pedido");
+        var label = document.getElementById("labelOS");
+        if (acao === "ENTRADA") { label.style.color = "#d35400"; input.style.borderColor = "#d35400"; } 
+        else { label.style.color = "#27ae60"; input.style.borderColor = "#27ae60"; }
+    }
+    function formatarDataBR(dt) { if (!dt) return ""; let p = dt.split('-'); return `${p[2]}/${p[1]}/${p[0]}`; }
+    
+    function adicionarFila() {
+        var ped = document.getElementById("pedido").value.trim();
+        if(!ped) { alert("Digite a O.S."); return; }
+        filaDeEnvio.push({ tempId: Date.now(), idUnico: gerarIdUnico(), acao: document.getElementById("tipoAcao").value, loja: document.getElementById("loja").value, pedido: ped, data: formatarDataBR(document.getElementById("dataMovimento").value), responsavel: document.getElementById("responsavel").value || "-", status: "pendente" });
+        document.getElementById("pedido").value = ""; document.getElementById("pedido").focus(); renderizarTabela();
+    }
+    function removerItem(tempId) { filaDeEnvio = filaDeEnvio.filter(i => i.tempId !== tempId); renderizarTabela(); }
+    function renderizarTabela() {
+        var tbody = document.querySelector("#tabelaPedidos tbody"); tbody.innerHTML = "";
+        filaDeEnvio.slice().reverse().forEach(d => {
+            var row = tbody.insertRow();
+            row.style.backgroundColor = d.status === "pendente" ? "#fff3cd" : "#d4edda";
+            row.insertCell(0).innerHTML = d.status === "pendente" ? `<button class="btn-delete-item" onclick="removerItem(${d.tempId})">❌</button>` : "-";
+            row.insertCell(1).innerHTML = d.status === "pendente" ? "<span class='status-pendente'>⏳ Pend</span>" : "<span class='status-ok'>✅ OK</span>";
+            row.insertCell(2).innerHTML = `<span class="id-code">${d.idUnico}</span>`;
+            row.insertCell(3).innerText = d.acao;
+            row.insertCell(4).innerHTML = `<strong>${d.pedido}</strong>`;
+            row.insertCell(5).innerText = d.responsavel;
+        });
+        atualizarBotao();
+    }
+    function atualizarBotao() {
+        var pend = filaDeEnvio.filter(i => i.status === "pendente").length;
+        document.getElementById("btnEnviarGoogle").style.display = pend > 0 ? "block" : "none";
+        document.getElementById("contador").innerText = pend;
+    }
+    function limparTudo() { document.getElementById("pedido").value = ""; document.getElementById("responsavel").value = ""; document.getElementById("pedido").focus(); }
+</script>
+
+</body>
+</html>

@@ -15,235 +15,111 @@
         }
 
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', system-ui, sans-serif;
             background-color: var(--fundo-dark);
             background-image: radial-gradient(circle at 10% 20%, #1c1c20 0%, #09090b 80%);
             color: var(--texto);
             min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+            display: flex; align-items: center; justify-content: center;
         }
 
         .container {
-            display: grid;
-            grid-template-columns: 1.2fr 0.8fr;
-            max-width: 1100px;
-            width: 90%;
+            display: grid; grid-template-columns: 1.2fr 0.8fr;
+            max-width: 1100px; width: 90%;
             background: rgba(24, 24, 27, 0.6);
             backdrop-filter: blur(20px);
             border: 1px solid var(--borda);
-            border-radius: 24px;
-            overflow: hidden;
+            border-radius: 24px; overflow: hidden;
             box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
         }
 
-        /* LADO ESQUERDO */
-        .info-side {
-            padding: 50px;
-            border-right: 1px solid var(--borda);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-        }
-
-        .brand h1 {
-            font-size: 2.5rem;
-            margin: 0;
-            background: linear-gradient(to right, #fff, var(--ouro));
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: -1px;
-        }
-
+        .info-side { padding: 50px; border-right: 1px solid var(--borda); display: flex; flex-direction: column; justify-content: center; }
+        .brand h1 { font-size: 2.5rem; margin: 0; background: linear-gradient(to right, #fff, var(--ouro)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
         .brand p { color: var(--texto-sec); font-size: 1.1rem; margin-top: 10px; margin-bottom: 40px; }
-
-        .modules-grid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr; }
-
-        .module-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid var(--borda);
-            padding: 15px;
-            border-radius: 12px;
-            display: flex; align-items: center; gap: 10px;
-            transition: 0.3s;
-        }
         
-        .icon-box {
-            background: rgba(255, 255, 255, 0.05);
-            width: 40px; height: 40px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px; color: var(--ouro);
-        }
-
+        .modules-grid { display: grid; gap: 15px; grid-template-columns: 1fr 1fr; }
+        .module-card { background: rgba(255, 255, 255, 0.03); border: 1px solid var(--borda); padding: 15px; border-radius: 12px; display: flex; align-items: center; gap: 10px; }
+        .icon-box { background: rgba(255, 255, 255, 0.05); width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 20px; color: var(--ouro); }
         .text-box h3 { margin: 0; font-size: 0.9rem; color: #fff; }
         .text-box p { margin: 2px 0 0 0; font-size: 0.75rem; color: var(--texto-sec); }
 
-        /* LADO DIREITO */
-        .login-side {
-            padding: 50px;
-            background: var(--painel);
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            position: relative;
-            min-height: 400px;
-        }
-
+        .login-side { padding: 50px; background: var(--painel); display: flex; flex-direction: column; justify-content: center; position: relative; min-height: 400px; }
         .login-header { text-align: center; margin-bottom: 30px; }
         .login-header h2 { margin: 0; font-size: 1.8rem; }
         .login-header span { color: var(--ouro); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; font-weight: bold; }
 
-        /* FORMULÁRIO */
-        #login-form { width: 100%; transition: opacity 0.5s; }
-        
         .input-group { margin-bottom: 20px; }
         .input-group label { display: block; font-size: 0.8rem; color: var(--texto-sec); margin-bottom: 8px; font-weight: 600; text-transform: uppercase; }
-        
-        input {
-            width: 100%; padding: 14px; background: #27272a; border: 1px solid #3f3f46;
-            border-radius: 8px; color: #fff; font-size: 1rem; outline: none; box-sizing: border-box; transition: 0.3s;
-        }
+        input { width: 100%; padding: 14px; background: #27272a; border: 1px solid #3f3f46; border-radius: 8px; color: #fff; font-size: 1rem; outline: none; box-sizing: border-box; transition: 0.3s; }
         input:focus { border-color: var(--ouro); box-shadow: 0 0 0 2px rgba(212, 175, 55, 0.2); }
 
-        button {
-            width: 100%; padding: 16px; background: var(--ouro); color: #000; border: none;
-            border-radius: 8px; font-weight: 700; font-size: 1rem; cursor: pointer; transition: 0.3s;
-            margin-top: 10px; text-transform: uppercase; letter-spacing: 0.5px;
-        }
+        button { width: 100%; padding: 16px; background: var(--ouro); color: #000; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; text-transform: uppercase; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #b5952f; transform: translateY(-2px); }
         button:disabled { opacity: 0.7; cursor: not-allowed; }
 
-        .error-msg {
-            background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px; border-radius: 8px;
-            font-size: 0.9rem; text-align: center; margin-top: 20px; display: none; border: 1px solid rgba(239, 68, 68, 0.2);
-        }
+        .error-msg { background: rgba(239, 68, 68, 0.1); color: #ef4444; padding: 12px; border-radius: 8px; font-size: 0.9rem; text-align: center; margin-top: 20px; display: none; border: 1px solid rgba(239, 68, 68, 0.2); }
 
-        /* MENU ADMIN (INICIALMENTE OCULTO) */
         #admin-menu { display: none; width: 100%; text-align: center; animation: fadeIn 0.5s; }
-        
-        .admin-welcome { margin-bottom: 30px; font-size: 1.2rem; color: #fff; }
-        
-        .admin-btn {
-            background: transparent; border: 1px solid var(--borda); color: #fff;
-            margin-bottom: 15px; display: flex; align-items: center; justify-content: center; gap: 10px;
-            width: 100%; padding: 15px; border-radius: 8px; font-weight: 600; cursor: pointer; transition: 0.3s;
-        }
-        .admin-btn:hover { background: rgba(255,255,255,0.05); border-color: var(--ouro); color: var(--ouro); }
-        
-        .logout-btn { background: #ef4444; color: white; margin-top: 20px; font-size: 0.8rem; padding: 10px; width: 100%; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; text-transform: uppercase; }
-        .logout-btn:hover { background: #c0392b; }
+        .admin-btn { background: transparent; border: 1px solid var(--borda); color: #fff; margin-bottom: 12px; width: 100%; padding: 14px; border-radius: 8px; cursor: pointer; text-align: left; padding-left: 20px; font-weight: 600; display: flex; align-items: center; gap: 10px; }
+        .admin-btn:hover { border-color: var(--ouro); color: var(--ouro); background: rgba(255,255,255,0.05); }
+        .logout-btn { background: #ef4444; color: white; margin-top: 20px; font-size: 0.8rem; padding: 10px; width: 100%; border: none; border-radius: 6px; cursor: pointer; font-weight: bold; }
 
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-        @media (max-width: 900px) {
-            .container { grid-template-columns: 1fr; margin: 20px; }
-            .info-side { padding: 30px; border-right: none; border-bottom: 1px solid var(--borda); }
-            .login-side { padding: 30px; }
-            .modules-grid { grid-template-columns: 1fr; }
-        }
+        @media (max-width: 900px) { .container { grid-template-columns: 1fr; } .info-side { border-right: none; border-bottom: 1px solid var(--borda); } }
     </style>
 </head>
 <body>
 
     <div class="container">
-        
         <div class="info-side">
             <div class="brand">
                 <h1>Sistema Prime</h1>
                 <p>Plataforma integrada de gestão industrial e comercial.</p>
             </div>
-
             <div class="modules-grid">
-                <div class="module-card">
-                    <div class="icon-box">💎</div>
-                    <div class="text-box"><h3>Vendas</h3><p>Catálogo e Pedidos</p></div>
-                </div>
-                <div class="module-card">
-                    <div class="icon-box">🏭</div>
-                    <div class="text-box"><h3>PCP</h3><p>Controle de Fábrica</p></div>
-                </div>
-                <div class="module-card">
-                    <div class="icon-box">📊</div>
-                    <div class="text-box"><h3>Gestão</h3><p>Admin de Pedidos</p></div>
-                </div>
-                <div class="module-card">
-                    <div class="icon-box">📦</div>
-                    <div class="text-box"><h3>Expedição</h3><p>Romaneio e Entrega</p></div>
-                </div>
+                <div class="module-card"><div class="icon-box">💎</div><div class="text-box"><h3>Vendas</h3><p>Catálogo e Pedidos</p></div></div>
+                <div class="module-card"><div class="icon-box">🏭</div><div class="text-box"><h3>PCP</h3><p>Controle de Fábrica</p></div></div>
+                <div class="module-card"><div class="icon-box">📊</div><div class="text-box"><h3>Gestão</h3><p>Admin de Pedidos</p></div></div>
+                <div class="module-card"><div class="icon-box">📦</div><div class="text-box"><h3>Expedição</h3><p>Romaneio e Entrega</p></div></div>
             </div>
         </div>
 
         <div class="login-side">
-            
             <div id="login-form">
-                <div class="login-header">
-                    <span>Área Restrita</span>
-                    <h2>Acesse sua conta</h2>
-                </div>
-
+                <div class="login-header"><span>Área Restrita</span><h2>Acesse sua conta</h2></div>
                 <div class="input-group">
                     <label>Usuário</label>
                     <input type="text" id="user" placeholder="Digite seu usuário">
                 </div>
-
                 <div class="input-group">
                     <label>Senha</label>
                     <input type="password" id="pass" placeholder="••••••••">
                 </div>
-
                 <button onclick="fazerLogin()" id="btn-login">Entrar</button>
                 <div id="msg-erro" class="error-msg"></div>
             </div>
 
             <div id="admin-menu">
-                <div class="login-header">
-                    <span>Acesso Total</span>
-                    <h2>Olá, Administrador</h2>
-                </div>
-                <p class="admin-welcome">Onde deseja acessar?</p>
-
-                <button class="admin-btn" onclick="irPara('vendas.html')">💎 Sistema de Vendas</button>
-                <button class="admin-btn" onclick="irPara('pcp.html')">🏭 Painel PCP</button>
-                <button class="admin-btn" onclick="irPara('pedidos.html')">📊 Gestão de Pedidos</button>
-                <button class="admin-btn" onclick="irPara('os.html')">🚚 Logística / O.S.</button>
-                <button class="admin-btn" onclick="irPara('reimpressao.html')">🖨️ Central de Reimpressão</button>
-                <button class="admin-btn" onclick="irPara('romaneio.html')">📦 Expedição & Romaneio</button>
-                
+                <div class="login-header"><span>Acesso Total</span><h2>Olá, Administrador</h2></div>
+                <button class="admin-btn" onclick="irPara('vendas.html')"><span>💎</span> Sistema de Vendas</button>
+                <button class="admin-btn" onclick="irPara('pcp.html')"><span>🏭</span> Painel PCP</button>
+                <button class="admin-btn" onclick="irPara('pedidos.html')"><span>📊</span> Gestão de Pedidos</button>
+                <button class="admin-btn" onclick="irPara('os.html')"><span>🚚</span> Logística / O.S.</button>
+                <button class="admin-btn" onclick="irPara('romaneio.html')"><span>📦</span> Expedição & Romaneio</button>
                 <button class="logout-btn" onclick="sair()">Sair da Conta</button>
             </div>
-
         </div>
-
     </div>
 
     <script>
-        // ✅ URL ATUALIZADA
-        const API_URL = "https://script.google.com/macros/s/AKfycbwruZnMwnZGo0Tc9WLgtbw6ozYNiDgYlJ55cDxCl0LLs98_H_75BQvyPcMpR04xwRiYBQ/exec";
+        // ✅ URL ATUALIZADA DO SEU SCRIPT
+        const API_URL = "https://script.google.com/macros/s/AKfycbzESFLRMh_UIjYVNNo4yBkTFpIQ4-38QCTBYYC3aWiAnu_vVNR8QSmy35BfryGEDi7xYg/exec"; 
 
         document.addEventListener("DOMContentLoaded", function() {
-            try {
-                const sessao = JSON.parse(sessionStorage.getItem('usuarioLogado'));
-                
-                if(sessao && sessao.logado) {
-                    const funcao = String(sessao.funcao).toLowerCase().trim();
-
-                    if(funcao === 'admin') {
-                        mostrarAdminMenu();
-                    } else if (funcao === 'vendedor') {
-                        window.location.href = "vendas.html";
-                    } else if (funcao === 'fabrica') {
-                        window.location.href = "pcp.html";
-                    } else if (funcao === 'loja') {
-                        window.location.href = "os.html";
-                    } else {
-                        sessionStorage.clear();
-                    }
-                }
-            } catch (e) {
-                sessionStorage.clear(); 
+            const sessao = JSON.parse(sessionStorage.getItem('usuarioLogado'));
+            if(sessao && sessao.logado) {
+                redirecionarPorFuncao(sessao.funcao);
             }
         });
 
@@ -254,9 +130,11 @@
             
             if(!u || !p) return mostrarErro("Preencha todos os campos.");
 
-            btn.disabled = true; btn.innerText = "VERIFICANDO...";
+            btn.disabled = true; 
+            btn.innerText = "VERIFICANDO...";
             document.getElementById('msg-erro').style.display = 'none';
 
+            // Chamada usando o novo roteamento do Código.gs
             fetch(`${API_URL}?action=login&user=${encodeURIComponent(u)}&pass=${encodeURIComponent(p)}`)
             .then(r => r.json())
             .then(data => {
@@ -264,28 +142,32 @@
                     const funcaoNormalizada = String(data.funcao).toLowerCase().trim();
                     const sessao = { usuario: data.usuario, funcao: funcaoNormalizada, logado: true };
                     sessionStorage.setItem('usuarioLogado', JSON.stringify(sessao));
-
-                    if(funcaoNormalizada === 'admin') {
-                        mostrarAdminMenu(); 
-                    } else if(funcaoNormalizada === 'vendedor') {
-                        window.location.href = "vendas.html";
-                    } else if(funcaoNormalizada === 'fabrica') {
-                        window.location.href = "pcp.html";
-                    } else if(funcaoNormalizada === 'loja') {
-                        window.location.href = "os.html";
-                    } else {
-                        mostrarErro("Função desconhecida: " + data.funcao);
-                        resetBtn();
-                    }
+                    redirecionarPorFuncao(funcaoNormalizada);
                 } else {
-                    mostrarErro(data.msg || "Dados incorretos.");
+                    mostrarErro(data.msg || "Usuário ou senha inválidos.");
                     resetBtn();
                 }
             })
             .catch(e => {
-                mostrarErro("Erro de conexão.");
+                mostrarErro("Erro de conexão com o servidor. Verifique a URL do script.");
                 resetBtn();
             });
+        }
+
+        function redirecionarPorFuncao(funcao) {
+            if(funcao === 'admin') {
+                mostrarAdminMenu();
+            } else if (funcao === 'vendedor') {
+                window.location.href = "vendas.html";
+            } else if (funcao === 'fabrica') {
+                window.location.href = "pcp.html";
+            } else if (funcao === 'loja') {
+                window.location.href = "os.html";
+            } else {
+                mostrarErro("Acesso não autorizado para esta função.");
+                sessionStorage.clear();
+                resetBtn();
+            }
         }
 
         function mostrarAdminMenu() {
@@ -293,9 +175,7 @@
             document.getElementById('admin-menu').style.display = 'block';
         }
 
-        function irPara(pagina) {
-            window.location.href = pagina;
-        }
+        function irPara(pagina) { window.location.href = pagina; }
 
         function sair() {
             sessionStorage.clear();
@@ -312,12 +192,9 @@
             btn.disabled = false; btn.innerText = "ENTRAR";
         }
 
+        // Atalhos de teclado para melhorar a experiência
         document.getElementById("pass").addEventListener("keypress", (e) => { if(e.key==="Enter") fazerLogin(); });
         document.getElementById("user").addEventListener("keypress", (e) => { if(e.key==="Enter") document.getElementById("pass").focus(); });
     </script>
 </body>
-
 </html>
-
-
-
